@@ -48,3 +48,24 @@ Other things worth knowing:
 - The user agent curl/8.21.0 coming from a Windows desktop is a good thing to alert on by itself.
 - The C2 is on port 443 but it isn't real TLS. There is no client hello with a server name and no certificate. Wireshark only guesses "SSL" for some packets. Something that uses 443 without TLS stands out if you look at it.
 - The alert says the C2 is 195.64.128[.]106, but there are no packets to that IP in the pcap. The traffic goes to 195.63.128[.]106, so I think the alert has a typo.
+
+## MITRE ATT&CK
+- T1189 Drive-by Compromise (likely): the browser visits ars-soar[.]com and gets passed to sorrelapse[.]best right away.
+- T1204.004 User Execution: Malicious Copy and Paste (likely): curl runs on the desktop right after the web visit, which fits a fake CAPTCHA page telling the user to paste a command.
+- T1105 Ingress Tool Transfer (seen): curl downloads runner_ilove.exe from 107.175.82[.]242.
+- T1571 Non-Standard Port (seen): the EXE comes over port 9000, and the C2 uses 443 without TLS.
+- T1219 Remote Access Tools (seen in the alert and the traffic): a long RMS-based RAT session to 195.63.128[.]106.
+
+"Seen" means it's in the traffic. "Likely" means the traffic fits it, but the content was encrypted so I can't prove it.
+
+## What I would do next
+- Isolate DESKTOP-4VGYQX7 from the network.
+- Block the domains and IPs above at the proxy and firewall.
+- Reset the password for bdiaz, since a RAT can see anything typed on the host.
+- Search the proxy and DNS logs for the other indicators and for curl/8.21.0 from Windows hosts, to see if anyone else got hit.
+- Look for runner_ilove.exe or its hash on other machines with the EDR.
+
+## What I couldn't see
+- What /prw and /crv returned, because they were HTTPS.
+- What the RAT actually did. Its traffic isn't readable, so I can only say it was connected for about 37 minutes.
+- Whether the 11 MB download from a Visual Studio blob storage server at 19:30:29 has anything to do with the infection. It happened right before the EXE download but it's a normal Microsoft server, so I left it out of the indicators.
