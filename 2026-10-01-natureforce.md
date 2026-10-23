@@ -31,3 +31,20 @@ How I found them:
 - 19:30:44 The host starts talking to 195.63.128[.]106 on port 443. This goes on until the end of the capture.
 - 19:31:04 Windows downloads the Sectigo code signing root certificate, so the EXE is probably signed and Windows was checking the signature.
 - 20:07:58 Capture ends. The C2 connection is still active.
+
+## Indicators
+Domains and IPs:
+- www.ars-soar[.]com, 54.201.5[.]185 (first suspicious site)
+- sorrelapse[.]best, 44.203.10[.]190 (redirect right after it)
+- holtandberyl[.]com, 35.170.55[.]9 (where curl went first)
+- hxxp://107.175.82[.]242:9000/wilow/runner_ilove.exe (EXE download)
+- 195.63.128[.]106:443 (C2)
+
+File:
+- runner_ilove.exe, 1,646,592 bytes
+- SHA-256 b789adce70c028a6d17be45ec34667aa95586350ee0c4057e75b138b1ad35061
+
+Other things worth knowing:
+- The user agent curl/8.21.0 coming from a Windows desktop is a good thing to alert on by itself.
+- The C2 is on port 443 but it isn't real TLS. There is no client hello with a server name and no certificate. Wireshark only guesses "SSL" for some packets. Something that uses 443 without TLS stands out if you look at it.
+- The alert says the C2 is 195.64.128[.]106, but there are no packets to that IP in the pcap. The traffic goes to 195.63.128[.]106, so I think the alert has a typo.
