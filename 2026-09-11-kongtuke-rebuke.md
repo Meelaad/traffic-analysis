@@ -20,3 +20,22 @@ How I found them:
 - There's no DHCP in this pcap, so the host name couldn't come from there like last time. The NetBIOS browser announcements from 10.9.11[.]135 have DESKTOP-6T17ZFM, and the Kerberos traffic has a ticket for host/desktop-6t17zfm.overhands[.]org.
 - The user is in the Kerberos CNameString field (gmcdowell).
 - LDAP to the domain controller was encrypted, so the full name wasn't there. It was in the SAMR traffic instead. The host asked the domain controller about gmcdowell over SAMR, and the QueryUserInfo reply has the full name.
+
+## Timeline (UTC, 2026-09-11)
+- 20:05:55 Capture starts. The browser loads quadcinema[.]com (104.196.13[.]170), along with jQuery and Google Analytics.
+- 20:05:56 One second later the browser connects to aatthews[.]cfd over QUIC. This is most likely the Kongtuke script injected into the site, which shows the fake verification page.
+- 20:06:33 37 seconds later, something that isn't the browser connects to winrun2915[.]com. The TLS fingerprints show the difference. The browser's JA4 starts with t13d1516h2_8daaf6152771 and this one with t13d2013h1_2b729b4bf6f3, which is a Windows program. This is most likely the command the user pasted.
+- 20:06:36 The same kind of client connects to logincrypt8338[.]com, and at 20:06:38 to opscast3707[.]net. The first opscast3707[.]net connection downloads 7.2 MB.
+- 20:06:42 to 20:06:46 Small downloads from www.xos-aploq[.]com and jaw.xos-aploq[.]com.
+- 20:06:47 35 MB from nodejs.org, about the size of the Node.js zip for Windows. Same kind of client again.
+- 20:06:52 86 kB from soft.xos-aploq[.]com.
+- 20:06:57 Five seconds later, HTTP C2 starts to know.mom-nower[.]com (86.106.87[.]134) on port 80. It polls about every 10 seconds. The URLs are random, but they all contain the same 64 character hex ID. The user agent says Firefox 137, but the browser's own traffic looks like Edge. The first POST at 20:07:16 is 12.9 kB, probably details about the host.
+- 20:07:41 From here the three numbered domains get a new HTTPS connection in turn, one every 16 seconds, so each domain every 48 seconds. Each one is only a few kB. This is a second C2 channel, separate from the HTTP one.
+- 20:08:06 The C2 sends back something with content, and 0.1 seconds later the host asks the domain controller over SAMR for the members of the Domain Computers group. That's what net group "domain computers" /domain does.
+- 20:08:59 Packages get downloaded from registry.npmjs.org (15 connections, 830 kB). This fingerprint (t13d521100_b262b3658495) is different from both of the others, which fits Node.js itself.
+- 20:10:03 The HTTP C2 comes back after a one minute gap with a new ID, so the malware probably restarted after installing the packages.
+- 20:15:33 Another C2 reply, and 0.05 seconds later the host looks up gmcdowell's account and groups over SAMR, like net user gmcdowell /domain.
+- 20:19:10 Both C2 channels stop and the host goes almost quiet.
+- 20:22:07 gmcdowell gets a new Kerberos ticket (AS-REQ) and there's a burst of Microsoft and Office sign-in traffic. There's no ticket request for the computer account, so this looks like the user signing out and back in, not a reboot.
+- 20:22:17 Ten seconds later the HTTP C2 is back with the same ID as before 20:19, so it's set to start when the user logs in. Now it goes through 9 hostnames on 4 domains, sending a 75 byte POST and a POST of about 26 kB to each one. Every request gets a 400 or 406 error back, including the ones to know.mom-nower[.]com. The HTTPS channel to the three numbered domains doesn't come back.
+- 20:27:05 Capture ends.
