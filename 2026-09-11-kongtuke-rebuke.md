@@ -63,3 +63,32 @@ Other things worth knowing:
 - A Firefox user agent from a host whose browser is Edge is a good thing to alert on, like curl was in the Natureforce exercise.
 - Two of the C2 replies were followed by SAMR queries to the domain controller within a tenth of a second. That timing is how I could tie the domain lookups to the C2, even without being able to read the commands.
 - Downloading Node.js isn't bad by itself, but a normal user's PC getting Node.js and npm packages a minute after visiting a website is worth a look.
+
+## MITRE ATT&CK
+- T1189 Drive-by Compromise (likely): the browser loads aatthews[.]cfd one second after the site.
+- T1204.004 User Execution: Malicious Copy and Paste (likely): a program that isn't the browser starts connecting out 37 seconds later, which fits the user pasting the command from the fake verification page.
+- T1105 Ingress Tool Transfer (seen): Node.js, the xos-aploq[.]com files, 7.2 MB from opscast3707[.]net and the npm packages.
+- T1059.007 Command and Scripting Interpreter: JavaScript (likely): Node.js gets downloaded and the HTTP C2 starts 5 seconds after the last file.
+- T1071.001 Application Layer Protocol: Web Protocols (seen): HTTP C2 to know.mom-nower[.]com and HTTPS C2 to the three numbered domains.
+- T1573 Encrypted Channel (seen): the HTTP C2 bodies are gzip and then encrypted.
+- T1069.002 Permission Groups Discovery: Domain Groups (seen): the Domain Computers members get looked up right after a C2 reply.
+- T1087.002 Account Discovery: Domain Account (seen): gmcdowell's account and groups get looked up right after a C2 reply.
+- T1547 Boot or Logon Autostart Execution (likely): the HTTP C2 comes back with the same ID 10 seconds after the user signs in again.
+- T1008 Fallback Channels (seen): after the sign-in it goes through 9 C2 hostnames on 4 domains.
+
+"Seen" means it's in the traffic. "Likely" means the traffic fits it, but the content was encrypted so I can't prove it.
+
+## What I would do next
+- Isolate DESKTOP-6T17ZFM from the network.
+- Block the domains above at the proxy and DNS, and the three non-Cloudflare IPs at the firewall.
+- Reset the password for gmcdowell.
+- The malware listed the domain's computers, so check the domain controller and the other hosts for logons from 10.9.11[.]135 or by gmcdowell after 20:06. In this pcap the host only talked to the domain controller.
+- Find what starts Node.js when gmcdowell logs in (Run keys, the Startup folder, scheduled tasks) and remove it, or just reimage the host.
+- Search the proxy logs for the Firefox 137 user agent from hosts that don't have Firefox, for URLs with a 64 character hex ID, and for Node.js downloads to PCs that aren't used for development.
+- Remind users that a real CAPTCHA never asks you to paste anything into the Run window.
+
+## What I couldn't see
+- The command the user pasted and the files from xos-aploq[.]com and opscast3707[.]net, because they were HTTPS.
+- The C2 commands. The bodies are encrypted, so I only know what two of them did from the SAMR traffic right after.
+- What the 26 kB uploads at the end were, and why every server rejected them.
+- Whether the HTTPS C2 and the Node.js C2 are the same malware or two different ones, and why the HTTPS one never came back after 20:19. The exercise page has the malware files for reverse engineers, but I stuck to the pcap.
