@@ -39,3 +39,27 @@ How I found them:
 - 20:22:07 gmcdowell gets a new Kerberos ticket (AS-REQ) and there's a burst of Microsoft and Office sign-in traffic. There's no ticket request for the computer account, so this looks like the user signing out and back in, not a reboot.
 - 20:22:17 Ten seconds later the HTTP C2 is back with the same ID as before 20:19, so it's set to start when the user logs in. Now it goes through 9 hostnames on 4 domains, sending a 75 byte POST and a POST of about 26 kB to each one. Every request gets a 400 or 406 error back, including the ones to know.mom-nower[.]com. The HTTPS channel to the three numbered domains doesn't come back.
 - 20:27:05 Capture ends.
+
+## Indicators
+Domains and IPs:
+- quadcinema[.]com, 104.196.13[.]170 (the site the user visited, probably compromised)
+- aatthews[.]cfd, 172.67.205[.]86 and 104.21.22[.]148 (probably the Kongtuke script)
+- winrun2915[.]com, logincrypt8338[.]com, opscast3707[.]net (HTTPS C2)
+- www.xos-aploq[.]com, jaw.xos-aploq[.]com, soft.xos-aploq[.]com (downloads)
+- know.mom-nower[.]com, 86.106.87[.]134 (HTTP C2)
+- now.comonto-rsr[.]com, firt.comonto-rsr[.]com, start.comonto-rsr[.]com (HTTP C2 after the sign-in)
+- stream.fif-lost[.]com, hyko.fif-lost[.]com (same)
+- second.bert-hits[.]com, gets.bert-hits[.]com, www.bert-hits[.]com (same)
+- 62.3.53[.]87 and 146.70.139[.]165 (C2 IPs that aren't Cloudflare, see below)
+
+HTTP C2:
+- Every URL has an ampersand and a 64 character hex ID in it. This host used 4a0fd955c05d43841a9a8d921ceec63b0dc5b431a9fb54b33ad7848707bc16e9 until 20:08:57 and 99099296646b5ffb8188092fb5030b7890c1de2d6a058cab178d4548c4dca1ab after that.
+- User agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:137.0) Gecko/20100101 Firefox/137.0
+- The bodies start with 1f8b, so they're gzip, but what's inside is encrypted.
+
+Other things worth knowing:
+- Most of the IPs here are Cloudflare (104.21.x.x and 172.67.x.x), which lots of normal sites share. Blocking the domains works better than blocking those IPs. The only C2 IPs that aren't Cloudflare are 86.106.87[.]134, 62.3.53[.]87 and 146.70.139[.]165.
+- Since almost everything was HTTPS, JA4 was the easiest way to tell the programs apart. There were three: the browser, a Windows program (the pasted command and the HTTPS C2) and Node.js.
+- A Firefox user agent from a host whose browser is Edge is a good thing to alert on, like curl was in the Natureforce exercise.
+- Two of the C2 replies were followed by SAMR queries to the domain controller within a tenth of a second. That timing is how I could tie the domain lookups to the C2, even without being able to read the commands.
+- Downloading Node.js isn't bad by itself, but a normal user's PC getting Node.js and npm packages a minute after visiting a website is worth a look.
